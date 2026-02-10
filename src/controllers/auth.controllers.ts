@@ -3,7 +3,6 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { User } from "../models/User";
 
-
 // ================= REGISTER =================
 export const register = async (req: Request, res: Response) => {
   try {
@@ -34,7 +33,6 @@ export const register = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server Error", error });
   }
 };
-
 
 // ================= LOGIN =================
 export const login = async (req: Request, res: Response) => {
@@ -78,7 +76,6 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-
 // ================= LOGOUT =================
 export const logout = async (req: Request, res: Response) => {
   try {
@@ -86,5 +83,44 @@ export const logout = async (req: Request, res: Response) => {
     res.json({ message: "Logged out" });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error });
+  }
+};
+
+// ================= GET PROFILE =================
+export const getProfile = async (req: any, res: Response) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error });
+  }
+};
+
+// ================= UPDATE PROFILE =================
+export const updateProfile = async (req: any, res: Response) => {
+  try {
+    const { name, role } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { name, role },
+      { new: true }
+    ).select("-password");
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Profile update failed", error });
   }
 };
