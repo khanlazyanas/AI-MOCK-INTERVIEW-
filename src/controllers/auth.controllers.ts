@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { User } from "../models/User";
+import { AuthRequest } from "../middleware/auth.middlewares";
 
 // ================= REGISTER =================
 export const register = async (req: Request, res: Response) => {
@@ -11,7 +12,8 @@ export const register = async (req: Request, res: Response) => {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
-        message: "User Already Exists",
+        success: false,
+        message: "User already exists",
       });
     }
 
@@ -25,12 +27,11 @@ export const register = async (req: Request, res: Response) => {
 
     res.status(201).json({
       success: true,
-      message: "User Registered Successfully",
+      message: "User registered successfully",
       user,
     });
-
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -51,45 +52,47 @@ export const login = async (req: Request, res: Response) => {
     if (!isMatch) {
       return res.status(400).json({
         success: false,
-        message: "Wrong Password",
+        message: "Wrong password",
       });
     }
 
+    // 🔥 IMPORTANT FIX
     const token = jwt.sign(
-      { id: user._id },
+      { userId: user._id },
       process.env.JWT_SECRET as string,
       { expiresIn: "10d" }
     );
 
     res.status(200).json({
       success: true,
-      message: "Login successfully",
+      message: "Login successful",
       token,
       user,
     });
-
   } catch (error) {
-    res.status(500).json({
-      message: "Server Error",
-      error,
-    });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
 // ================= LOGOUT =================
-export const logout = async (req: Request, res: Response) => {
+export const logout = async (_req: Request, res: Response) => {
   try {
-    res.clearCookie("token");
-    res.json({ message: "Logged out" });
+    res.json({ success: true, message: "Logged out" });
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
 // ================= GET PROFILE =================
-export const getProfile = async (req: any, res: Response) => {
+export const getProfile = async (req: AuthRequest, res: Response) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const user = await User.findById(userId).select("-password");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -97,30 +100,40 @@ export const getProfile = async (req: any, res: Response) => {
 
     res.status(200).json({
       success: true,
-      user,
+      name: user.name,
+      email: user.email,
+      role: user.role || "User",
     });
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
 // ================= UPDATE PROFILE =================
-export const updateProfile = async (req: any, res: Response) => {
+export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?.userId;
     const { name, role } = req.body;
 
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      { name, role },
-      { new: true }
-    ).select("-password");
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (name) user.name = name;
+    if (role) user.role = role;
+
+    await user.save();
 
     res.status(200).json({
       success: true,
       message: "Profile updated successfully",
-      user,
     });
   } catch (error) {
-    res.status(500).json({ message: "Profile update failed", error });
+    res.status(500).json({ message: "Server error" });
   }
 };

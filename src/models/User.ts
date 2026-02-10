@@ -1,28 +1,33 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Document, Schema } from "mongoose";
 
-// TypeScript interface
 export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
+  role?: string;
 }
 
-// Mongoose schema
-const userSchema: Schema<IUser> = new Schema({
-  name: {
-    type: String,   // Mongoose type
-    required: true
+const userSchema = new Schema<IUser>(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    role: {
+      type: String,
+      default: "User",
+    },
   },
-  email: {
-    type: String,
-    unique: true,
-    required: true
-  },
-  password: {
-    type: String,
-    required: true
-  }
-});
+  { timestamps: true }
+);
 
-// Model
 export const User = mongoose.model<IUser>("User", userSchema);
