@@ -6,8 +6,6 @@ export const uploadResumeService = async (
   fileUrl: string,
   text: string
 ) => {
-
-  // AI analysis
   const feedback = await analyzeResume(text);
 
   const resume = await Resume.create({

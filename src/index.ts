@@ -42,6 +42,8 @@ app.use("/api/resume", resumeRoutes);
 app.use("/api/interview", interviewRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/uploads", express.static("uploads"));
+
 
 // Health check
 app.get("/", (req: Request, res: Response) => {

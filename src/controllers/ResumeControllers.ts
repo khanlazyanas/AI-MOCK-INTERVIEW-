@@ -5,9 +5,11 @@ import { AuthRequest } from "../middleware/auth.middlewares";
 
 /**
  * ✅ Upload Resume
- * (JWT protected)
  */
-export const uploadResume = async (req: AuthRequest, res: Response) => {
+export const uploadResume = async (
+  req: AuthRequest,
+  res: Response
+) => {
   try {
     const userId = req.user?.userId;
 
@@ -17,22 +19,27 @@ export const uploadResume = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const { fileUrl, text } = req.body;
-
-    if (!fileUrl || !text) {
+    if (!req.file) {
       return res.status(400).json({
-        message: "fileUrl and text are required",
+        message: "Resume file is required",
       });
     }
 
-    const resume = await uploadResumeService(userId, fileUrl, text);
+    const fileUrl = `/uploads/${req.file.filename}`;
 
-    res.status(201).json({
+    const resume = await uploadResumeService(
+      userId,
+      fileUrl,
+      "Text extraction pending"
+    );
+
+    return res.status(201).json({
       message: "Resume uploaded successfully",
       resume,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Upload Resume Error:", error);
+    return res.status(500).json({
       message: "Resume upload failed",
     });
   }
@@ -40,7 +47,6 @@ export const uploadResume = async (req: AuthRequest, res: Response) => {
 
 /**
  * ✅ Analyze Resume
- * (AI only, optional auth)
  */
 export const analyzeResumeController = async (
   req: AuthRequest,
@@ -57,12 +63,13 @@ export const analyzeResumeController = async (
 
     const analysis = await analyzeResume(resumeText);
 
-    res.json({
+    return res.json({
       message: "Resume analyzed successfully",
       analysis,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Analyze Resume Error:", error);
+    return res.status(500).json({
       message: "Resume analysis failed",
     });
   }
