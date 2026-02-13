@@ -1,6 +1,40 @@
 import { Request, Response } from "express";
 import { Interview } from "../models/Interview";
-import { evaluateAnswer } from "../services/ai.service";
+import { generateQuestions, evaluateAnswer } from "../services/ai.service";
+
+/**
+ * 🚀 Start Interview
+ */
+export const startInterview = async (req: Request, res: Response) => {
+  try {
+    const { role, resumeText } = req.body;
+
+    if (!role || !resumeText) {
+      return res.status(400).json({
+        message: "Role and resumeText are required",
+      });
+    }
+
+    const questions = await generateQuestions(role, resumeText);
+
+    const interview = await Interview.create({
+      role,
+      questions,
+      currentQuestionIndex: 0,
+      answers: [],
+      isCompleted: false,
+    });
+
+    return res.status(201).json({
+      interviewId: interview._id,
+    });
+  } catch (error) {
+    console.error("Start Interview Error:", error);
+    return res.status(500).json({
+      message: "Failed to start interview",
+    });
+  }
+};
 
 /**
  * 👉 Get Next Question
@@ -16,24 +50,26 @@ export const getNextQuestion = async (req: Request, res: Response) => {
     }
 
     if (interview.isCompleted) {
-      return res.status(400).json({ message: "Interview already completed" });
+      return res.status(400).json({ message: "Interview completed" });
     }
 
     const index = interview.currentQuestionIndex;
     const question = interview.questions[index];
 
-    res.json({
+    return res.json({
       question,
       index,
       total: interview.questions.length,
     });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching question" });
+    return res.status(500).json({
+      message: "Error fetching question",
+    });
   }
 };
 
 /**
- * 👉 Submit Answer + Move Next
+ * 👉 Submit Answer
  */
 export const submitAnswerAndMoveNext = async (
   req: Request,
@@ -51,7 +87,6 @@ export const submitAnswerAndMoveNext = async (
     const index = interview.currentQuestionIndex;
     const question = interview.questions[index];
 
-    // ✅ AI evaluation (NEW)
     const aiResult = await evaluateAnswer(question, answer);
 
     interview.answers.push({
@@ -78,8 +113,13 @@ export const submitAnswerAndMoveNext = async (
 
     await interview.save();
 
-    res.json(interview);
+    return res.json({
+      message: "Answer submitted",
+      isCompleted: interview.isCompleted,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Error submitting answer" });
+    return res.status(500).json({
+      message: "Error submitting answer",
+    });
   }
 };
