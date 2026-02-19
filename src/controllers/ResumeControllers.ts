@@ -6,59 +6,44 @@ import { AuthRequest } from "../middleware/auth.middlewares";
 /**
  * ✅ Upload Resume
  */
-export const uploadResume = async (
-  req: AuthRequest,
-  res: Response
-) => {
+export const uploadResume = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
 
     if (!userId) {
-      return res.status(401).json({
-        message: "Unauthorized",
-      });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     if (!req.file) {
-      return res.status(400).json({
-        message: "Resume file is required",
-      });
+      return res.status(400).json({ message: "Resume file is required" });
     }
+
+    console.log("User ID:", userId);
+    console.log("Uploaded file:", req.file);
 
     const fileUrl = `/uploads/${req.file.filename}`;
 
-    const resume = await uploadResumeService(
-      userId,
-      fileUrl,
-      "Text extraction pending"
-    );
+    const resume = await uploadResumeService(userId, fileUrl, "Text extraction pending");
 
     return res.status(201).json({
       message: "Resume uploaded successfully",
       resume,
     });
-  } catch (error) {
-    console.error("Upload Resume Error:", error);
-    return res.status(500).json({
-      message: "Resume upload failed",
-    });
+  } catch (error: any) {
+    console.error("Upload Resume Error:", error.message || error);
+    return res.status(500).json({ message: "Resume upload failed" });
   }
 };
 
 /**
  * ✅ Analyze Resume
  */
-export const analyzeResumeController = async (
-  req: AuthRequest,
-  res: Response
-) => {
+export const analyzeResumeController = async (req: AuthRequest, res: Response) => {
   try {
     const { resumeText } = req.body;
 
     if (!resumeText) {
-      return res.status(400).json({
-        message: "resumeText is required",
-      });
+      return res.status(400).json({ message: "resumeText is required" });
     }
 
     const analysis = await analyzeResume(resumeText);
@@ -67,10 +52,8 @@ export const analyzeResumeController = async (
       message: "Resume analyzed successfully",
       analysis,
     });
-  } catch (error) {
-    console.error("Analyze Resume Error:", error);
-    return res.status(500).json({
-      message: "Resume analysis failed",
-    });
+  } catch (error: any) {
+    console.error("Analyze Resume Error:", error.message || error);
+    return res.status(500).json({ message: "Resume analysis failed" });
   }
 };

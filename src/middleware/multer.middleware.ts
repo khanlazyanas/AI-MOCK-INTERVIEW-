@@ -1,12 +1,12 @@
 import multer from "multer";
-import path from "path";
 import fs from "fs";
+import path from "path";
 
-const uploadPath = "uploads";
+const uploadPath = path.join(__dirname, "../uploads");
 
 // Ensure uploads folder exists
 if (!fs.existsSync(uploadPath)) {
-  fs.mkdirSync(uploadPath);
+  fs.mkdirSync(uploadPath, { recursive: true });
 }
 
 const storage = multer.diskStorage({
@@ -14,8 +14,7 @@ const storage = multer.diskStorage({
     cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
-    const uniqueName =
-      Date.now() + "-" + file.originalname.replace(/\s+/g, "_");
+    const uniqueName = Date.now() + "-" + file.originalname.replace(/\s+/g, "_");
     cb(null, uniqueName);
   },
 });

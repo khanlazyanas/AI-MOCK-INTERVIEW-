@@ -6,7 +6,14 @@ export const uploadResumeService = async (
   fileUrl: string,
   text: string
 ) => {
-  const feedback = await analyzeResume(text);
+  let feedback: string;
+  try {
+    // AI call
+    feedback = await analyzeResume(text);
+  } catch (err) {
+    console.error("AI Service Error:", err);
+    feedback = "AI analysis failed"; // fallback so backend doesn't crash
+  }
 
   const resume = await Resume.create({
     user: userId,
