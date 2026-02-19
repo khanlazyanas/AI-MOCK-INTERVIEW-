@@ -2,12 +2,22 @@ import { Request, Response } from "express";
 import { Interview } from "../models/Interview";
 import { generateQuestions, evaluateAnswer } from "../services/ai.service";
 
-/**
- * 🚀 Start Interview
- */
-export const startInterview = async (req: Request, res: Response) => {
+/* =================================
+   Start Interview
+================================= */
+export const startInterview = async (req: any, res: Response) => {
   try {
     const { role, resumeText } = req.body;
+
+    // ✅ THE FIX: Safely extract user ID from multiple possible locations
+    // JWT middleware alag-alag naam se data save karta hai, humne sab handle kar liya.
+    const userId = req.user?.id || req.user?._id || req.userId || req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "User ID missing! Please ensure your Auth Middleware is passing the user info to req.user.",
+      });
+    }
 
     if (!role || !resumeText) {
       return res.status(400).json({
@@ -17,12 +27,21 @@ export const startInterview = async (req: Request, res: Response) => {
 
     const questions = await generateQuestions(role, resumeText);
 
+    if (!questions || questions.length === 0) {
+      return res.status(400).json({
+        message: "Failed to generate questions",
+      });
+    }
+
+    // Ab naya interview successfully save hoga kyunki userId 100% defined hai
     const interview = await Interview.create({
+      user: userId, 
       role,
       questions,
       currentQuestionIndex: 0,
       answers: [],
       isCompleted: false,
+      overallScore: 0,
     });
 
     return res.status(201).json({
@@ -36,9 +55,9 @@ export const startInterview = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * 👉 Get Next Question
- */
+/* =================================
+   Get Next Question
+================================= */
 export const getNextQuestion = async (req: Request, res: Response) => {
   try {
     const { interviewId } = req.params;
@@ -49,8 +68,16 @@ export const getNextQuestion = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Interview not found" });
     }
 
+    if (!interview.questions.length) {
+      return res.status(400).json({
+        message: "No questions available",
+      });
+    }
+
     if (interview.isCompleted) {
-      return res.status(400).json({ message: "Interview completed" });
+      return res.status(400).json({
+        message: "Interview completed",
+      });
     }
 
     const index = interview.currentQuestionIndex;
@@ -62,15 +89,16 @@ export const getNextQuestion = async (req: Request, res: Response) => {
       total: interview.questions.length,
     });
   } catch (error) {
+    console.error("Get Question Error:", error);
     return res.status(500).json({
       message: "Error fetching question",
     });
   }
 };
 
-/**
- * 👉 Submit Answer
- */
+/* =================================
+   Submit Answer
+================================= */
 export const submitAnswerAndMoveNext = async (
   req: Request,
   res: Response
@@ -81,7 +109,9 @@ export const submitAnswerAndMoveNext = async (
     const interview = await Interview.findById(interviewId);
 
     if (!interview) {
-      return res.status(404).json({ message: "Interview not found" });
+      return res.status(404).json({
+        message: "Interview not found",
+      });
     }
 
     const index = interview.currentQuestionIndex;
@@ -118,6 +148,7 @@ export const submitAnswerAndMoveNext = async (
       isCompleted: interview.isCompleted,
     });
   } catch (error) {
+    console.error("Submit Answer Error:", error);
     return res.status(500).json({
       message: "Error submitting answer",
     });
