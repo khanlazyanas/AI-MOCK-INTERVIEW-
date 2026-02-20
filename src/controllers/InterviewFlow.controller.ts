@@ -154,3 +154,24 @@ export const submitAnswerAndMoveNext = async (
     });
   }
 };
+
+/* =================================
+   Get Interview History
+================================= */
+export const getInterviewHistory = async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id || req.user?._id || req.userId || req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // User ke saare interviews find karo, naye wale sabse upar (createdAt: -1)
+    const interviews = await Interview.find({ user: userId }).sort({ createdAt: -1 });
+
+    return res.json({ interviews });
+  } catch (error) {
+    console.error("Get History Error:", error);
+    return res.status(500).json({ message: "Failed to fetch interview history" });
+  }
+};
