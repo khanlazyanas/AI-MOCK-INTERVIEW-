@@ -56,7 +56,6 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    // 🔥 IMPORTANT FIX
     const token = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET as string,
@@ -103,6 +102,7 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
       name: user.name,
       email: user.email,
       role: user.role || "User",
+      profilePicture: user.profilePicture || "", // ✅ Frontend ko photo bhejna zaroori hai
     });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
@@ -113,7 +113,8 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
 export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
-    const { name, role } = req.body;
+    // ✅ profilePicture ko body se extract kiya
+    const { name, role, profilePicture } = req.body; 
 
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -124,16 +125,20 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // ✅ Naya data DB mein assign kiya
     if (name) user.name = name;
     if (role) user.role = role;
+    if (profilePicture !== undefined) user.profilePicture = profilePicture;
 
     await user.save();
 
     res.status(200).json({
       success: true,
       message: "Profile updated successfully",
+      user // ✅ Optional: Updated user return kar sakte ho
     });
   } catch (error) {
+    console.error("Update Profile Error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

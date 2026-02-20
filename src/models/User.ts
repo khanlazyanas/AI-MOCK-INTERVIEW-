@@ -1,10 +1,12 @@
 import mongoose, { Document, Schema } from "mongoose";
 
+// ✅ FIX: yahan profilePicture add karna zaroori tha TypeScript ke liye
 export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
   role?: string;
+  profilePicture?: string; 
 }
 
 const userSchema = new Schema<IUser>(
@@ -25,6 +27,11 @@ const userSchema = new Schema<IUser>(
     role: {
       type: String,
       default: "User",
+    },
+    // ✅ Schema mein toh tumne bilkul sahi likha tha
+    profilePicture: {
+      type: String,
+      default: "",
     },
   },
   { timestamps: true }
