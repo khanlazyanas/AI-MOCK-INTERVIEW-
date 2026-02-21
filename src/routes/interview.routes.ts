@@ -4,6 +4,7 @@ import {
   getNextQuestion,
   submitAnswerAndMoveNext,
   getInterviewHistory,
+  getInterviewDetails,
 } from "../controllers/InterviewFlow.controller";
 import { protect } from "../middleware/auth.middlewares";
 import { aiLimiter } from "../middleware/rateLimit.middleware";
@@ -27,7 +28,7 @@ router.get("/:interviewId/question", protect, getNextQuestion);
 router.post("/answer", protect, aiLimiter, submitAnswerAndMoveNext);
 
 router.get("/history", protect, getInterviewHistory);
-
+router.get("/:id", protect, getInterviewDetails);
 export default router;
 
 

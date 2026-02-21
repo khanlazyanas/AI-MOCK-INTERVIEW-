@@ -175,3 +175,18 @@ export const getInterviewHistory = async (req: any, res: Response) => {
     return res.status(500).json({ message: "Failed to fetch interview history" });
   }
 };
+
+export const getInterviewDetails = async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+    const interview = await Interview.findById(id);
+    
+    if (!interview) {
+      return res.status(404).json({ message: "Interview not found" });
+    }
+    
+    res.json({ interview });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
