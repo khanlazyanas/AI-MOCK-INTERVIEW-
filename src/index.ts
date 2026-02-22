@@ -21,18 +21,30 @@ connectDB();
 const app = express();
 
 /**
- * ✅ CORS CONFIG
+ * ✅ BULLETPROOF CORS CONFIG
+ * Ab ye Localhost aur Vercel dono par makhan chalega!
  */
+const allowedOrigins = [
+  "http://localhost:5173", // Local development ke liye
+  "https://ai-mock-interview-lac-two.vercel.app", // Tumhara live Vercel URL
+  process.env.FRONTEND_URL // Fallback agar .env se aa raha ho
+].filter(Boolean);
+
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === "production"
-        ? process.env.FRONTEND_URL
-        : "http://localhost:5173",
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
-
 
 app.use(express.json());
 
@@ -43,7 +55,6 @@ app.use("/api/interview", interviewRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/uploads", express.static("uploads"));
-
 
 // Health check
 app.get("/", (req: Request, res: Response) => {
